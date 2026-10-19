@@ -11,9 +11,11 @@ const caja = require('./modules/caja');
 function crearApp({ archivoDb = null, ahora = () => new Date() } = {}) {
   const db = crearDb(archivoDb);
   const sesiones = new Map();
+  let infoBuild = {};
+  try { infoBuild = require('../build-info.json'); } catch { /* en desarrollo no existe */ }
 
   const rutas = [
-    ['GET', /^\/salud$/, () => ({ estado: 'ok', version: require('../package.json').version })],
+    ['GET', /^\/salud$/, () => ({ estado: 'ok', version: require('../package.json').version, commit: infoBuild.commit })],
     ['POST', /^\/auth\/registro$/, (c) => auth.registrar(db, { ...c.cuerpo, rol: 'cliente' }), 201],
     ['POST', /^\/auth\/login$/, (c) => auth.iniciarSesion(db, sesiones, c.cuerpo)],
     ['GET', /^\/menu$/, () => menu.listarMenu(db)],

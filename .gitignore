@@ -3,3 +3,5 @@ data/db.json
 *.log
 .env
 .DS_Store
+dist/
+build-info.json
