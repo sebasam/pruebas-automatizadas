@@ -2,6 +2,16 @@
 
 Formato basado en *Keep a Changelog*. Versionado semántico.
 
+## [1.1.0] - Automatización del pipeline CI/CD
+
+### Añadido
+- Pipeline de ocho etapas en `scripts/pipeline.sh`: preparación, construcción, pruebas con cobertura, seguridad, rendimiento, empaquetado, despliegue a staging y pruebas de humo con reversión automática.
+- Prueba de carga ligera (`scripts/carga.js`).
+- Flujo de GitHub Actions (`.github/workflows/ci-cd.yml`) y `Jenkinsfile` que usan las mismas etapas.
+- Ruta `/salud` informa el commit desplegado.
+- Archivo `package-lock.json` y lista `files` en `package.json` para el empaquetado.
+- Documentación del pipeline en `docs/PIPELINE.md`.
+
 ## [1.0.0] - Línea base (etiqueta `v1.0.0-linea-base`)
 
 ### Añadido
