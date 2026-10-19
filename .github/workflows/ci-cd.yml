@@ -1,0 +1,75 @@
+# Flujo de CI/CD del SIGR para GitHub Actions.
+# Cada trabajo invoca la misma etapa de scripts/pipeline.sh que se usa en local.
+name: CI/CD SIGR
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  construir:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: ./scripts/pipeline.sh construir
+
+  pruebas:
+    needs: construir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: ./scripts/pipeline.sh probar
+
+  seguridad:
+    needs: construir
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: ./scripts/pipeline.sh seguridad
+
+  rendimiento:
+    needs: [pruebas, seguridad]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: ./scripts/pipeline.sh rendimiento
+
+  empaquetar:
+    needs: rendimiento
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: ./scripts/pipeline.sh construir
+      - run: ./scripts/pipeline.sh empaquetar
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sigr-paquete
+          path: dist/*.tgz
+
+  desplegar-staging:
+    needs: empaquetar
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - uses: actions/download-artifact@v4
+        with:
+          name: sigr-paquete
+          path: dist
+      - run: ./scripts/pipeline.sh construir
+      - run: ./scripts/pipeline.sh desplegar
+      - run: ./scripts/pipeline.sh humo
