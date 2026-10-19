@@ -99,7 +99,7 @@ detener_servicio() {
 }
 
 iniciar_servicio() {
-  ( cd "$STAGING/current" && SIGR_DB="$STAGING/shared/db.json" PORT="$PUERTO" nohup node src/server.js > "$STAGING/servicio.log" 2>&1 & echo $! > "$STAGING/sigr.pid" )
+  ( cd "$STAGING/current" && SIGR_DB="$STAGING/shared/db.json" PORT="$PUERTO" setsid nohup node src/server.js > "$STAGING/servicio.log" 2>&1 < /dev/null & echo $! > "$STAGING/sigr.pid" )
   local i
   for i in $(seq 1 20); do
     curl -sf -m 1 "http://localhost:$PUERTO/salud" > /dev/null 2>&1 && return 0
