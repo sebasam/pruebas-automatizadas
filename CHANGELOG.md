@@ -11,6 +11,7 @@ Formato basado en *Keep a Changelog*. Versionado semántico.
 - Ruta `/salud` informa el commit desplegado.
 - Archivo `package-lock.json` y lista `files` en `package.json` para el empaquetado.
 - Documentación del pipeline en `docs/PIPELINE.md`.
+- Verificación del contenido del artefacto antes de desplegarlo.
 
 ## [1.0.0] - Línea base (etiqueta `v1.0.0-linea-base`)
 

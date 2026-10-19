@@ -85,6 +85,17 @@ etapa_empaquetar() {
   nombre="$(tail -1 "$DIST/pack.txt")"
   ( cd "$DIST" && sha256sum "$nombre" > "$nombre.sha256" )
   info "Artefacto: $nombre ($(du -h "$DIST/$nombre" | cut -f1)) con $(tar -tzf "$DIST/$nombre" | wc -l) archivos"
+  # Verificar que el paquete contenga lo necesario para ejecutar el servicio.
+  local requeridos=(package/package.json package/build-info.json package/README.md package/src/server.js package/src/app.js package/src/db.js package/src/errores.js package/src/modules/auth.js package/src/modules/menu.js package/src/modules/pedidos.js package/src/modules/reservas.js package/src/modules/caja.js)
+  local listado faltantes=() r
+  listado="$(tar -tzf "$DIST/$nombre")"
+  for r in "${requeridos[@]}"; do echo "$listado" | grep -qx "$r" || faltantes+=("$r"); done
+  if [ "${#faltantes[@]}" -gt 0 ]; then
+    info "El artefacto no contiene archivos obligatorios (${#faltantes[@]} de ${#requeridos[@]}):"
+    for r in "${faltantes[@]}"; do info "  falta ${r#package/}"; done
+    return 1
+  fi
+  info "Contenido verificado: ${#requeridos[@]} archivos obligatorios presentes"
   info "SHA-256: $(cut -c1-16 "$DIST/$nombre.sha256")..."
 }
 

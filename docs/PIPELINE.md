@@ -11,7 +11,7 @@ El pipeline se define una sola vez en `scripts/pipeline.sh` y se puede ejecutar 
 | 3 | Pruebas y cobertura | `node --test` con cobertura sobre `src/` | Todas las pruebas aprobadas y cobertura de líneas ≥ 80 % |
 | 4 | Seguridad | Búsqueda de secretos en el código y `npm audit` | Sin secretos y sin vulnerabilidades altas o críticas |
 | 5 | Rendimiento | Prueba de carga ligera (`scripts/carga.js`) | 0 errores y p95 ≤ 200 ms |
-| 6 | Empaquetado | `npm pack` y suma SHA-256 | Artefacto generado |
+| 6 | Empaquetado | `npm pack` y suma SHA-256 | Artefacto generado y con todos los archivos obligatorios |
 | 7 | Despliegue a staging | Instala el artefacto en una release nueva y cambia el enlace `current` | Servicio iniciado |
 | 8 | Pruebas de humo | `/salud` con el commit esperado, `/menu` y control de acceso | Respuestas esperadas; si fallan, reversión automática |
 
