@@ -99,7 +99,9 @@ detener_servicio() {
 }
 
 iniciar_servicio() {
-  ( cd "$STAGING/current" && SIGR_DB="$STAGING/shared/db.json" PORT="$PUERTO" setsid nohup node src/server.js > "$STAGING/servicio.log" 2>&1 < /dev/null & echo $! > "$STAGING/sigr.pid" )
+  # El PID se escribe desde el propio proceso (exec lo reemplaza por node), así el archivo siempre es correcto.
+  ( cd "$STAGING/current" && SIGR_DB="$STAGING/shared/db.json" PORT="$PUERTO" setsid bash -c 'echo $$ > "$0"; exec node src/server.js' "$STAGING/sigr.pid" > "$STAGING/servicio.log" 2>&1 < /dev/null & )
+  sleep 0.2
   local i
   for i in $(seq 1 20); do
     curl -sf -m 1 "http://localhost:$PUERTO/salud" > /dev/null 2>&1 && return 0
