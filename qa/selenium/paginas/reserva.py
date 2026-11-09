@@ -13,7 +13,8 @@ class PaginaReserva(PaginaBase):
         self._fijar_valor("hora", hora)
         vacio = personas in (None, "")
         self.escribir("personas", "" if vacio else str(personas))
-        Select(self.driver.find_element(By.ID, "mesa")).select_by_value(str(mesa))
+        lista = Select(self.driver.find_element(By.ID, "mesa"))
+        lista.select_by_value(str(mesa))
         self.pulsar("enviar")
         return self.mensaje()
 
@@ -25,4 +26,5 @@ class PaginaReserva(PaginaBase):
             "arguments[0].value = arguments[1];", campo, valor or "")
 
     def opciones_de_mesa(self):
-        return [o.text for o in Select(self.driver.find_element(By.ID, "mesa")).options]
+        lista = Select(self.driver.find_element(By.ID, "mesa"))
+        return [o.text for o in lista.options]
