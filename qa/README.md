@@ -4,7 +4,7 @@ Dos conjuntos de pruebas sobre el mismo sistema:
 
 | Área | Herramienta | Carpeta | Qué prueba |
 |---|---|---|---|
-| API REST | Postman + Newman | `postman/` | 3 colecciones: flujo funcional (45 peticiones), registro y login guiados por datos |
+| API REST | Postman + Newman | `postman/` | 3 colecciones: flujo funcional (47 peticiones), registro y login guiados por datos |
 | Formularios web | Selenium WebDriver (Python + pytest) | `selenium/` | Formulario de inicio de sesión y formulario de reservas |
 
 ## Requisitos
