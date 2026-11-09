@@ -1,0 +1,8 @@
+body{font-family:Arial,sans-serif;max-width:480px;margin:2rem auto;padding:0 1rem;color:#222}
+label{display:block;margin-top:.8rem;font-weight:bold}
+input,select{width:100%;padding:.4rem;box-sizing:border-box}
+button{margin-top:1rem;padding:.5rem 1rem}
+.mensaje{margin-top:1rem;padding:.6rem;border-radius:4px}
+.ok{background:#e3f5e6;border:1px solid #2e7d32}
+.error{background:#fdecea;border:1px solid #c62828}
+nav a{margin-right:1rem}

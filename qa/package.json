@@ -1,0 +1,7 @@
+{
+  "name": "sigr-qa",
+  "private": true,
+  "description": "Pruebas automatizadas de API (Postman/Newman) y de formularios web (Selenium) del SIGR",
+  "scripts": { "api": "bash run_api.sh" },
+  "devDependencies": { "newman": "^6.2.1", "newman-reporter-htmlextra": "^1.23.1" }
+}

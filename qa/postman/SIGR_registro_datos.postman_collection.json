@@ -1,0 +1,68 @@
+{
+  "info": {
+    "name": "SIGR - Registro guiado por datos",
+    "description": "Se ejecuta una iteración por cada fila de datos_registro.json (Newman -d).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /auth/registro - {{caso}}",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const e = pm.iterationData.get(\"email\"); pm.variables.set(\"email_final\", (e === null || e === undefined) ? undefined : String(e).replace(\"<ts>\", Date.now()));",
+              "const c = { nombre: pm.iterationData.get(\"nombre\"), email: pm.variables.get(\"email_final\"), clave: pm.iterationData.get(\"clave\") };",
+              "Object.keys(c).forEach(k => { if (c[k] === undefined || c[k] === null) delete c[k]; });",
+              "pm.variables.set(\"cuerpo\", JSON.stringify(c));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const esperado = Number(pm.iterationData.get(\"estadoEsperado\"));",
+              "pm.test(\"[\" + pm.iterationData.get(\"caso\") + \"] responde \" + esperado, () => pm.expect(pm.response.code).to.eql(esperado));",
+              "const frag = pm.iterationData.get(\"mensajeEsperado\");",
+              "if (frag) pm.test(\"[\" + pm.iterationData.get(\"caso\") + \"] el mensaje contiene \\\"\" + frag + \"\\\"\", () => pm.expect(pm.response.json().error).to.include(frag));",
+              "if (esperado === 201) pm.test(\"[\" + pm.iterationData.get(\"caso\") + \"] no expone la clave ni el hash\", () => pm.expect(pm.response.json()).to.not.have.any.keys(\"hash\", \"sal\", \"clave\"));"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/registro",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "registro"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{{cuerpo}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

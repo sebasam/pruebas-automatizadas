@@ -1,0 +1,76 @@
+[
+  {
+    "caso": "datos válidos",
+    "nombre": "Marta Díaz",
+    "email": "marta<ts>@prueba.com",
+    "clave": "Clave12345",
+    "estadoEsperado": 201
+  },
+  {
+    "caso": "nombre con tildes y eñe",
+    "nombre": "Íñigo Muñoz",
+    "email": "inigo<ts>@prueba.com",
+    "clave": "Clave12345",
+    "estadoEsperado": 201
+  },
+  {
+    "caso": "clave en el límite (8 caracteres)",
+    "nombre": "Límite Ocho",
+    "email": "ocho<ts>@prueba.com",
+    "clave": "12345678",
+    "estadoEsperado": 201
+  },
+  {
+    "caso": "sin nombre",
+    "email": "sn<ts>@prueba.com",
+    "clave": "Clave12345",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "obligatorios"
+  },
+  {
+    "caso": "sin correo",
+    "nombre": "Sin Correo",
+    "clave": "Clave12345",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "obligatorios"
+  },
+  {
+    "caso": "sin clave",
+    "nombre": "Sin Clave",
+    "email": "sc<ts>@prueba.com",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "obligatorios"
+  },
+  {
+    "caso": "correo sin arroba",
+    "nombre": "Mal Correo",
+    "email": "correo.prueba.com",
+    "clave": "Clave12345",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "correo no es valido"
+  },
+  {
+    "caso": "correo sin dominio",
+    "nombre": "Mal Dominio",
+    "email": "ana@sigr",
+    "clave": "Clave12345",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "correo no es valido"
+  },
+  {
+    "caso": "clave de 7 caracteres",
+    "nombre": "Clave Corta",
+    "email": "cc<ts>@prueba.com",
+    "clave": "1234567",
+    "estadoEsperado": 400,
+    "mensajeEsperado": "al menos 8"
+  },
+  {
+    "caso": "correo ya registrado",
+    "nombre": "Duplicado",
+    "email": "admin@sigr.local",
+    "clave": "Clave12345",
+    "estadoEsperado": 409,
+    "mensajeEsperado": "ya esta registrado"
+  }
+]

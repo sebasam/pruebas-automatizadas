@@ -1,0 +1,4 @@
+selenium>=4.20
+pytest>=8
+pytest-html>=4
+chromedriver-py>=141,<142

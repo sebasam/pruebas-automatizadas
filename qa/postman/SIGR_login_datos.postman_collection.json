@@ -1,0 +1,65 @@
+{
+  "info": {
+    "name": "SIGR - Login guiado por datos",
+    "description": "Una iteración por cada fila de datos_login.json.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "POST /auth/login - {{caso}}",
+      "event": [
+        {
+          "listen": "prerequest",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const c = { email: pm.iterationData.get(\"email\"), clave: pm.iterationData.get(\"clave\") };",
+              "Object.keys(c).forEach(k => { if (c[k] === null) delete c[k]; });",
+              "pm.variables.set(\"cuerpo\", JSON.stringify(c));"
+            ]
+          }
+        },
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "const esperado = Number(pm.iterationData.get(\"estadoEsperado\"));",
+              "pm.test(\"[\" + pm.iterationData.get(\"caso\") + \"] responde \" + esperado, () => pm.expect(pm.response.code).to.eql(esperado));",
+              "pm.test(\"[\" + pm.iterationData.get(\"caso\") + \"] \" + (esperado === 200 ? \"devuelve token\" : \"no devuelve token\"), () => { const d = pm.response.json(); esperado === 200 ? pm.expect(d.token).to.be.a(\"string\") : pm.expect(d).to.not.have.property(\"token\"); });"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "login"
+          ],
+          "query": []
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{{cuerpo}}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

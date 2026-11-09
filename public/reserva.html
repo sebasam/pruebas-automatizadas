@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>SIGR - Reservar mesa</title>
+<link rel="stylesheet" href="/ui/estilos.css"></head>
+<body>
+<nav><a href="/ui/login.html">Iniciar sesión</a><a href="/ui/reserva.html">Reservar mesa</a></nav>
+<h1>Reservar mesa</h1>
+<form id="form-reserva" novalidate>
+  <label for="cliente">Nombre del cliente</label><input id="cliente" name="cliente" type="text">
+  <label for="fecha">Fecha</label><input id="fecha" name="fecha" type="date">
+  <label for="hora">Hora</label><input id="hora" name="hora" type="time">
+  <label for="personas">Personas</label><input id="personas" name="personas" type="number">
+  <label for="mesa">Mesa</label>
+  <select id="mesa" name="mesa"></select>
+  <button id="enviar" type="submit">Reservar</button>
+</form>
+<div id="mensaje" class="mensaje" role="alert" hidden></div>
+<script>
+const f = document.getElementById('form-reserva'), m = document.getElementById('mensaje');
+for (let i = 1; i <= 10; i += 1) f.mesa.add(new Option('Mesa ' + i, i));
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const cuerpo = { cliente: f.cliente.value.trim(), fecha: f.fecha.value, hora: f.hora.value,
+    personas: Number(f.personas.value), mesa: Number(f.mesa.value) };
+  const r = await fetch('/reservas', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(cuerpo) });
+  const d = await r.json();
+  m.hidden = false;
+  if (r.ok) { m.className = 'mensaje ok'; m.textContent = 'Reserva confirmada: número ' + d.id + ', mesa ' + d.mesa + ', ' + d.fecha + ' ' + d.hora; }
+  else { m.className = 'mensaje error'; m.textContent = d.error; }
+});
+</script></body></html>

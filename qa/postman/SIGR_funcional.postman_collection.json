@@ -1,0 +1,2123 @@
+{
+  "info": {
+    "name": "SIGR - Pruebas funcionales de la API REST",
+    "description": "Flujo completo: salud, autenticación, menú, pedidos, reservas y reportes. Cada petición valida código HTTP, cuerpo y tiempo de respuesta.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [],
+  "item": [
+    {
+      "name": "01 Salud",
+      "item": [
+        {
+          "name": "GET /salud",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Responde en menos de 500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(500));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"estado = ok y trae versión\", () => { pm.expect(d.estado).to.eql(\"ok\"); pm.expect(d.version).to.match(/^\\d+\\.\\d+\\.\\d+$/); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/salud",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "salud"
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 Autenticación",
+      "item": [
+        {
+          "name": "Login administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Responde en menos de 500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(500));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Cumple el esquema esperado\", () => pm.response.to.have.jsonSchema({ type: \"object\", required: [\"token\", \"usuario\"], properties: { token: { type: \"string\", minLength: 20 }, usuario: { type: \"object\", required: [\"id\", \"nombre\", \"rol\"] } } }));",
+                  "pm.test(\"El rol es administrador\", () => pm.expect(d.usuario.rol).to.eql(\"administrador\"));",
+                  "pm.collectionVariables.set(\"token_admin\", d.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sigr.local\",\n  \"clave\": \"Admin12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El rol es mesero\", () => pm.expect(d.usuario.rol).to.eql(\"mesero\"));",
+                  "pm.collectionVariables.set(\"token_mesero\", d.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mesero@sigr.local\",\n  \"clave\": \"Mesero12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Login con clave incorrecta",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"El mensaje de error menciona: Credenciales\", () => pm.expect(pm.response.json().error).to.include(\"Credenciales\"));",
+                  "pm.test(\"No devuelve token\", () => pm.expect(pm.response.json()).to.not.have.property(\"token\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@sigr.local\",\n  \"clave\": \"incorrecta1\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro de cliente",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"email_cliente\", \"cliente\" + Date.now() + \"@prueba.com\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Se crea con rol cliente y sin exponer la clave\", () => { pm.expect(d.rol).to.eql(\"cliente\"); pm.expect(d).to.not.have.any.keys(\"hash\", \"sal\", \"clave\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Cliente Prueba\",\"email\":\"cliente{{$timestamp}}@prueba.com\",\"clave\":\"Clave12345\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro intentando escalar privilegios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El rol solicitado se ignora: queda como cliente\", () => pm.expect(d.rol).to.eql(\"cliente\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Intruso\",\"email\":\"intruso{{$timestamp}}@prueba.com\",\"clave\":\"Clave12345\",\"rol\":\"administrador\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Registro con correo duplicado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"El mensaje de error menciona: ya esta registrado\", () => pm.expect(pm.response.json().error).to.include(\"ya esta registrado\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/registro",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "registro"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Otro Admin\",\n  \"email\": \"admin@sigr.local\",\n  \"clave\": \"Clave12345\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 Menú",
+      "item": [
+        {
+          "name": "GET /menu (público)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Responde en menos de 500 ms\", () => pm.expect(pm.response.responseTime).to.be.below(500));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Es una lista de categorías con sus platos\", () => { pm.expect(d).to.be.an(\"array\").that.is.not.empty; d.forEach(c => pm.expect(c.platos).to.be.an(\"array\")); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/menu",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Crear categoría sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "categorias"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin permiso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear categoría como mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"El mensaje de error menciona: permiso\", () => pm.expect(pm.response.json().error).to.include(\"permiso\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "categorias"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Sin permiso\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear categoría como administrador",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.collectionVariables.set(\"categoria_id\", d.id);",
+                  "pm.test(\"Devuelve id numérico\", () => pm.expect(d.id).to.be.a(\"number\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/categorias",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "categorias"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Postres {{$timestamp}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear plato válido",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.collectionVariables.set(\"plato_id\", d.id);",
+                  "pm.test(\"Queda disponible con el precio indicado\", () => { pm.expect(d.precio).to.eql(12000); pm.expect(d.disponible).to.be.true; });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Tres leches\",\"precio\":12000,\"categoriaId\":{{categoria_id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear plato con precio negativo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: mayor que cero\", () => pm.expect(pm.response.json().error).to.include(\"mayor que cero\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"nombre\":\"Error\",\"precio\":-5,\"categoriaId\":{{categoria_id}}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear plato con categoría inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"El mensaje de error menciona: categoria no existe\", () => pm.expect(pm.response.json().error).to.include(\"categoria no existe\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Huérfano\",\n  \"precio\": 5000,\n  \"categoriaId\": 99999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Actualizar precio del plato",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El precio cambió y el nombre se conserva\", () => { pm.expect(d.precio).to.eql(13000); pm.expect(d.nombre).to.eql(\"Tres leches\"); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/menu/platos/{{plato_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "menu",
+                "platos",
+                "{{plato_id}}"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"precio\":13000}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 Pedidos",
+      "item": [
+        {
+          "name": "Crear pedido sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": 3,\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear pedido con token inválido",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"token_invalido\", \"token-invalido\");"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_invalido}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": 3,\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear pedido sin platos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: al menos un plato\", () => pm.expect(pm.response.json().error).to.include(\"al menos un plato\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mesa\": 3,\n  \"items\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear pedido con cantidad cero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: entero positivo\", () => pm.expect(pm.response.json().error).to.include(\"entero positivo\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mesa\":3,\"items\":[{\"platoId\":{{plato_id}},\"cantidad\":0}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Crear pedido válido (2 unidades)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.collectionVariables.set(\"pedido_id\", d.id);",
+                  "pm.test(\"El total es precio x cantidad = 26000\", () => pm.expect(d.total).to.eql(26000));",
+                  "pm.test(\"Inicia en estado recibido\", () => pm.expect(d.estado).to.eql(\"recibido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"mesa\":3,\"items\":[{\"platoId\":{{plato_id}},\"cantidad\":2}]}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Saltarse un estado (recibido → listo)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"El mensaje de error menciona: No se puede pasar\", () => pm.expect(pm.response.json().error).to.include(\"No se puede pasar\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"listo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Estado inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: Estado no valido\", () => pm.expect(pm.response.json().error).to.include(\"Estado no valido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"volando\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Avanzar a en_preparacion",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El pedido queda en en_preparacion\", () => pm.expect(d.estado).to.eql(\"en_preparacion\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"en_preparacion\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Avanzar a listo",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El pedido queda en listo\", () => pm.expect(d.estado).to.eql(\"listo\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"listo\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Avanzar a entregado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El pedido queda en entregado\", () => pm.expect(d.estado).to.eql(\"entregado\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"entregado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Avanzar a pagado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"El pedido queda en pagado\", () => pm.expect(d.estado).to.eql(\"pagado\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos/{{pedido_id}}/estado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos",
+                "{{pedido_id}}",
+                "estado"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"estado\": \"pagado\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Listar pedidos pagados",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Todos los pedidos listados están pagados e incluyen el creado\", () => { d.forEach(p => pm.expect(p.estado).to.eql(\"pagado\")); pm.expect(d.map(p => p.id)).to.include(Number(pm.collectionVariables.get(\"pedido_id\"))); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/pedidos?estado=pagado",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pedidos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "pagado"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 Reservas",
+      "item": [
+        {
+          "name": "Disponibilidad inicial",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Las 10 mesas están libres\", () => pm.expect(d.mesasLibres).to.have.lengthOf(10));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/disponibilidad?fecha=2026-12-24&hora=20:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "disponibilidad"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-12-24"
+                },
+                {
+                  "key": "hora",
+                  "value": "20:00"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Crear reserva válida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.collectionVariables.set(\"reserva_id\", d.id);",
+                  "pm.test(\"Queda activa\", () => pm.expect(d.estado).to.eql(\"activa\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Laura Gómez\",\n  \"mesa\": 5,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"20:00\",\n  \"personas\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "La mesa 5 deja de estar disponible",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Hay 9 libres y la 5 no está\", () => { pm.expect(d.mesasLibres).to.have.lengthOf(9); pm.expect(d.mesasLibres).to.not.include(5); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/disponibilidad?fecha=2026-12-24&hora=20:00",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "disponibilidad"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-12-24"
+                },
+                {
+                  "key": "hora",
+                  "value": "20:00"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reserva duplicada en el mismo horario",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"El mensaje de error menciona: ya esta reservada\", () => pm.expect(pm.response.json().error).to.include(\"ya esta reservada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Pedro Ruiz\",\n  \"mesa\": 5,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"20:00\",\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva que se solapa (1 h después)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 409\", () => pm.response.to.have.status(409));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Pedro Ruiz\",\n  \"mesa\": 5,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"21:00\",\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva justo al terminar las 2 h",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Pedro Ruiz\",\n  \"mesa\": 5,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"22:00\",\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva con 0 personas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: entre 1 y 12\", () => pm.expect(pm.response.json().error).to.include(\"entre 1 y 12\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"mesa\": 1,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"20:00\",\n  \"personas\": 0\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva con 13 personas (sobre el límite)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: entre 1 y 12\", () => pm.expect(pm.response.json().error).to.include(\"entre 1 y 12\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"mesa\": 1,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"20:00\",\n  \"personas\": 13\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva con 12 personas (límite permitido)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Guarda las 12 personas\", () => pm.expect(d.personas).to.eql(12));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Grupo grande\",\n  \"mesa\": 8,\n  \"fecha\": \"2026-12-24\",\n  \"hora\": \"20:00\",\n  \"personas\": 12\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Reserva con fecha inválida",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: AAAA-MM-DD\", () => pm.expect(pm.response.json().error).to.include(\"AAAA-MM-DD\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reservas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cliente\": \"Ana\",\n  \"mesa\": 1,\n  \"fecha\": \"24/12/2026\",\n  \"hora\": \"20:00\",\n  \"personas\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Cancelar la reserva",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Queda cancelada\", () => pm.expect(d.estado).to.eql(\"cancelada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/{{reserva_id}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "{{reserva_id}}"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "Cancelar reserva inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reservas/99999",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reservas",
+                "99999"
+              ],
+              "query": []
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 Caja y reportes",
+      "item": [
+        {
+          "name": "Reporte sin sesión",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/ventas?fecha=2026-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-01-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reporte como mesero",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 403\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_mesero}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/ventas?fecha=2026-01-01",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "2026-01-01"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reporte de ventas de hoy",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"hoy\", new Date().toISOString().slice(0, 10));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 200\", () => pm.response.to.have.status(200));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Refleja el pedido pagado (26000 y 2 Tres leches)\", () => { pm.expect(d.pedidos).to.be.at.least(1); pm.expect(d.total).to.be.at.least(26000); pm.expect(d.platosVendidos[\"Tres leches\"]).to.be.at.least(2); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/ventas?fecha={{hoy}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "{{hoy}}"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reporte con fecha mal escrita",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: AAAA-MM-DD\", () => pm.expect(pm.response.json().error).to.include(\"AAAA-MM-DD\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reportes/ventas?fecha=ayer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reportes",
+                "ventas"
+              ],
+              "query": [
+                {
+                  "key": "fecha",
+                  "value": "ayer"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cierre de caja",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 201\", () => pm.response.to.have.status(201));",
+                  "const d = pm.response.json();",
+                  "pm.test(\"Registra al responsable y el total\", () => { pm.expect(d.responsable).to.eql(\"Administrador\"); pm.expect(d.total).to.be.at.least(26000); });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/caja/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "caja",
+                "cierre"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fecha\":\"{{hoy}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Segundo cierre el mismo día",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"El mensaje de error menciona: ya fue cerrada\", () => pm.expect(pm.response.json().error).to.include(\"ya fue cerrada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token_admin}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/caja/cierre",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "caja",
+                "cierre"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"fecha\":\"{{hoy}}\"}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 Errores generales",
+      "item": [
+        {
+          "name": "Ruta inexistente",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"El mensaje de error menciona: Ruta no encontrada\", () => pm.expect(pm.response.json().error).to.include(\"Ruta no encontrada\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/no-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "no-existe"
+              ],
+              "query": []
+            }
+          }
+        },
+        {
+          "name": "JSON mal formado",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"El código de estado es 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"El mensaje de error menciona: JSON no valido\", () => pm.expect(pm.response.json().error).to.include(\"JSON no valido\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

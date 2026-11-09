@@ -5,3 +5,10 @@ data/db.json
 .DS_Store
 dist/
 build-info.json
+node_modules/
+qa/node_modules/
+qa/resultados/
+qa/selenium/capturas/
+qa/selenium/resultados.html
+__pycache__/
+.pytest_cache/

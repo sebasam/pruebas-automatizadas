@@ -1,11 +1,33 @@
 'use strict';
 const http = require('http');
 const path = require('path');
+const fs = require('fs');
+
+const TIPOS = { '.html': 'text/html; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+const PUBLICO = path.join(__dirname, '..', 'public');
+
+/** Sirve las paginas estaticas bajo /ui/. Devuelve true si atendio la peticion. */
+function servirEstatico(req, res) {
+  if (req.method !== 'GET') return false;
+  const url = new URL(req.url, 'http://localhost');
+  if (url.pathname === '/') { res.writeHead(302, { Location: '/ui/reserva.html' }); res.end(); return true; }
+  if (!url.pathname.startsWith('/ui/')) return false;
+  const archivo = path.normalize(path.join(PUBLICO, url.pathname.slice(4)));
+  if (!archivo.startsWith(PUBLICO + path.sep) || !fs.existsSync(archivo)) {
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('No encontrado');
+    return true;
+  }
+  res.writeHead(200, { 'Content-Type': TIPOS[path.extname(archivo)] || 'application/octet-stream' });
+  res.end(fs.readFileSync(archivo));
+  return true;
+}
 const { crearApp } = require('./app');
 
 function crearServidor(opciones = {}) {
   const app = crearApp(opciones);
   return http.createServer((req, res) => {
+    if (servirEstatico(req, res)) return;
     let texto = '';
     req.on('data', (d) => { texto += d; });
     req.on('end', () => {

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>SIGR - Iniciar sesión</title>
+<link rel="stylesheet" href="/ui/estilos.css"></head>
+<body>
+<nav><a href="/ui/login.html">Iniciar sesión</a><a href="/ui/reserva.html">Reservar mesa</a></nav>
+<h1>Iniciar sesión</h1>
+<form id="form-login" novalidate>
+  <label for="email">Correo</label><input id="email" name="email" type="email">
+  <label for="clave">Clave</label><input id="clave" name="clave" type="password">
+  <button id="enviar" type="submit">Ingresar</button>
+</form>
+<div id="mensaje" class="mensaje" role="alert" hidden></div>
+<script>
+const f = document.getElementById('form-login'), m = document.getElementById('mensaje');
+f.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const r = await fetch('/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: f.email.value, clave: f.clave.value }) });
+  const d = await r.json();
+  m.hidden = false;
+  if (r.ok) { m.className = 'mensaje ok'; m.textContent = 'Bienvenido, ' + d.usuario.nombre + ' (' + d.usuario.rol + ')'; }
+  else { m.className = 'mensaje error'; m.textContent = d.error; }
+});
+</script></body></html>

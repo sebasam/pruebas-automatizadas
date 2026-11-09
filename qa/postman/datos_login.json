@@ -1,0 +1,38 @@
+[
+  {
+    "caso": "administrador correcto",
+    "email": "admin@sigr.local",
+    "clave": "Admin12345",
+    "estadoEsperado": 200
+  },
+  {
+    "caso": "mesero correcto",
+    "email": "mesero@sigr.local",
+    "clave": "Mesero12345",
+    "estadoEsperado": 200
+  },
+  {
+    "caso": "clave incorrecta",
+    "email": "admin@sigr.local",
+    "clave": "admin12345",
+    "estadoEsperado": 401
+  },
+  {
+    "caso": "correo inexistente",
+    "email": "nadie@sigr.local",
+    "clave": "Admin12345",
+    "estadoEsperado": 401
+  },
+  {
+    "caso": "sin clave",
+    "email": "admin@sigr.local",
+    "clave": null,
+    "estadoEsperado": 401
+  },
+  {
+    "caso": "clave vacía",
+    "email": "admin@sigr.local",
+    "clave": "",
+    "estadoEsperado": 401
+  }
+]
