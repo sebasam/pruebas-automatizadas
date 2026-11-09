@@ -11,13 +11,15 @@ class PaginaReserva(PaginaBase):
         self.escribir("cliente", cliente)
         self._fijar_valor("fecha", fecha)
         self._fijar_valor("hora", hora)
-        self.escribir("personas", str(personas) if personas not in (None, "") else "")
+        vacio = personas in (None, "")
+        self.escribir("personas", "" if vacio else str(personas))
         Select(self.driver.find_element(By.ID, "mesa")).select_by_value(str(mesa))
         self.pulsar("enviar")
         return self.mensaje()
 
     def _fijar_valor(self, id_campo, valor):
-        """Los campos date/time dependen del idioma del navegador; se fija el valor por JavaScript."""
+        """Los campos date/time dependen del idioma del navegador;
+        por eso su valor se fija por JavaScript."""
         campo = self.driver.find_element(By.ID, id_campo)
         self.driver.execute_script(
             "arguments[0].value = arguments[1];", campo, valor or "")
